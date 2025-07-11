@@ -3,10 +3,15 @@ from langgraph.prebuilt import create_react_agent
 from langchain_openai import AzureChatOpenAI
 import asyncio
 import os
+import sys
 from dotenv import load_dotenv
 
 # Load environment variables
 load_dotenv()
+
+# Fix for Windows event loop issues
+if sys.platform == "win32":
+    asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
 
 async def create_mongodb_agent():
     """Create a MongoDB-focused agent with database operation capabilities"""
@@ -139,5 +144,18 @@ async def main():
             print(f"❌ Error: {str(e)}")
             print("Please try a different query.\n")
 
+def run_main():
+    """Wrapper function to handle event loop properly on Windows"""
+    if sys.platform == "win32":
+        # Create a new event loop for Windows
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        try:
+            return loop.run_until_complete(main())
+        finally:
+            loop.close()
+    else:
+        return asyncio.run(main())
+
 if __name__ == "__main__":
-    asyncio.run(main()) 
+    run_main() 
